@@ -7,6 +7,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -42,7 +45,7 @@ jobs:
         name: IronShield ${{ github.ref_name }}
         body: |
           ## تغییرات این نسخه
-          - نسخه ${ github.ref_name }
+          - نسخه ${{ github.ref_name }}
         draft: false
         prerelease: false
       env:
