@@ -6,8 +6,8 @@
     <application
         android:allowBackup="true"
         android:icon="@android:drawable/ic_lock_lock"
-        android:label="IronShield"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:label="@string/app_name"
+        android:theme="@style/Theme.IronShield">
         <activity
             android:name=".MainActivity"
             android:exported="true">
