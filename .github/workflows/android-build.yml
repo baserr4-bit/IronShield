@@ -3,12 +3,7 @@ name: Build IronShield APK
 on:
   push:
     branches: [ "main", "master" ]
-    tags:
-      - 'v*'
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
@@ -31,22 +26,8 @@ jobs:
     - name: Build Debug APK
       run: gradle assembleDebug
 
-    - name: Upload APK to Artifacts
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: IronShield-debug
         path: app/build/outputs/apk/debug/app-debug.apk
-
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/v')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: app/build/outputs/apk/debug/app-debug.apk
-        name: IronShield ${{ github.ref_name }}
-        body: |
-          ## تغییرات این نسخه
-          - نسخه ${{ github.ref_name }}
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
