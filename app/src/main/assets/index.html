@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>IronShield - فیلتر محتوا</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: Tahoma, Arial, sans-serif; }
+  body { background: #f5f5f5; min-height: 100vh; padding: 20px; }
+  h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
+  .container { max-width: 600px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  input[type=text] { width: 100%; padding: 14px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 16px; }
+  input[type=text]:focus { outline: none; border-color: #6650a4; }
+  button { padding: 12px 24px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; background: #6650a4; color: white; width: 100%; }
+  button:hover { background: #544390; }
+  .log { margin-top: 20px; padding: 12px; background: #f0f0f0; border-radius: 8px; min-height: 60px; font-size: 14px; color: #555; }
+
+  .warning-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: radial-gradient(circle, #B00000, #4A0000, #1A0000);
+    display: none; flex-direction: column; align-items: center; justify-content: space-evenly;
+    padding: 2vh 3vw; color: white; text-align: center;
+    width: 100vw; height: 100vh;
+  }
+  .warning-overlay.active { display: flex; }
+  .warning-title { font-size: clamp(28px, 5vw, 48px); font-weight: 900; margin-bottom: 1vh; }
+  .warning-subtitle { font-size: clamp(22px, 4vw, 36px); font-weight: bold; color: #FFD700; margin-bottom: 2vh; }
+  .warning-text { font-size: clamp(16px, 2.5vw, 24px); line-height: 1.6; max-width: 90vw; padding: 0 2vw; }
+  .gates { display: flex; gap: 3vw; margin-top: 2vh; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .gate {
+    width: clamp(140px, 35vw, 220px); height: clamp(140px, 35vw, 220px);
+    border-radius: 20px; display: flex;
+    align-items: center; justify-content: center; text-align: center;
+    color: white; font-weight: bold; font-size: clamp(14px, 2vw, 18px); cursor: pointer;
+    padding: 16px; transition: transform 0.2s;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .gate:hover { transform: scale(1.08); }
+  .gate:active { transform: scale(0.95); }
+  .gate-heaven { background: linear-gradient(135deg, #006400, #008000); }
+  .gate-hell { background: linear-gradient(135deg, #8B0000, #A52A2A); }
+
+  .heaven-overlay {
+    position: fixed; inset: 0; z-index: 1001;
+    background: radial-gradient(circle, #FFF8DC, #FFD700, #90EE90);
+    display: none; align-items: center; justify-content: center;
+    color: #006400; font-size: clamp(28px, 5vw, 48px); font-weight: 900; text-align: center;
+    flex-direction: column;
+  }
+  .heaven-overlay.active { display: flex; }
+  .heaven-message {
+    opacity: 0;
+    transition: opacity 1s ease-in;
+    padding: 20px;
+  }
+  .heaven-message.show { opacity: 1; }
+  .petal {
+    position: fixed; font-size: 32px; pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    from { transform: translateY(-100px) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0.5; }
+  }
+
+  .hell-overlay {
+    position: fixed; inset: 0; z-index: 1001;
+    background: radial-gradient(circle, #8B0000, #2A0000, black);
+    display: none; align-items: center; justify-content: center;
+    color: #FF4500; font-size: clamp(32px, 6vw, 56px); font-weight: 900; text-align: center;
+    animation: shake 0.1s infinite;
+  }
+  .hell-overlay.active { display: flex; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(20px); }
+  }
+</style>
+</head>
+<body>
+  <h1>🛡️ IronShield - فیلتر محتوا</h1>
+  <div class="container">
+    <input type="text" id="searchInput" placeholder="جست‌وجو کنید...">
+    <button onclick="doSearch()">جست‌وجو</button>
+    <div class="log" id="log">آماده...</div>
+  </div>
+
+  <div class="warning-overlay" id="warning">
+    <div>
+      <div class="warning-title">هشدار جدی!!!!</div>
+      <div class="warning-subtitle">لحظه‌ای مکث کن!</div>
+    </div>
+    <div class="warning-text">
+      این جست‌وجو تو را گمراه می‌کند و از انسانیت و ایمان خارج می‌کند و خدا را ناراحت و شیطان را شاد می‌کند.
+      حال تصمیم بگیر کدام راه را انتخاب می‌کنی: راه بندگی خدای بزرگ یا راه بندگی شیطان ملعون.
+    </div>
+    <div class="gates">
+      <div class="gate gate-heaven" onclick="chooseHeaven()">دروازه ورود به بهشت و بندگی خدا</div>
+      <div class="gate gate-hell" onclick="chooseHell()">دروازه ورود به آتش و جهنم</div>
+    </div>
+  </div>
+
+  <div class="heaven-overlay" id="heaven">
+    <div class="heaven-message" id="heavenMessage">🌸 به بندگی خدا خوش آمدی 🌸</div>
+  </div>
+
+  <div class="hell-overlay" id="hell">⚠️ راه شیطان ⚠️</div>
+
+<script>
+  const input = document.getElementById('searchInput');
+  const log = document.getElementById('log');
+  const warning = document.getElementById('warning');
+  const heaven = document.getElementById('heaven');
+  const hell = document.getElementById('hell');
+  const heavenMessage = document.getElementById('heavenMessage');
+
+  const blockedWords = [
+    'سکس', 'سکسی', 'پورن', 'تصاویر سکسی', 'فیلم سکسی', 'عکس های سکسی',
+    'دختر سکسی', 'پسر سکسی', 'آلت زن', 'آلت مرد', 'زن لخت', 'دختر لخت',
+    'پسر لخت', 'مرد لخت', 'پسر برهنه', 'دختر برهنه', 'پستان دختر', 'پستان زن',
+    'sex', 'sexy', 'porn', 'xxx', 'nude', 'naked', 'breast', 'boobs'
+  ];
+
+  const keywordPatterns = [
+    'سکس', 'سکسی', 'پورن', 'لخت', 'برهنه', 'آلت', 'پستان',
+    'sex', 'sexy', 'porn', 'xxx', 'nude', 'naked', 'breast', 'boobs'
+  ];
+
+  function normalize(text) {
+    return text.toLowerCase()
+      .replace(/ي/g, 'ی').replace(/ك/g, 'ک')
+      .replace(/[\u200c\u200d\u200e\u200f]/g, '')
+      .replace(/\s+/g, ' ')
+      .replace(/[ًٌٍَُِّْ]/g, '')
+      .trim();
+  }
+
+  function levenshtein(a, b) {
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  function isSimilar(word1, word2) {
+    const distance = levenshtein(word1, word2);
+    const maxLen = Math.max(word1.length, word2.length);
+    return distance <= Math.max(1, Math.floor(maxLen * 0.3));
+  }
+
+  function containsBlocked(text) {
+    const norm = normalize(text);
+    
+    for (const phrase of blockedWords) {
+      const normPhrase = normalize(phrase);
+      if (norm.includes(normPhrase)) return phrase;
+    }
+    
+    const words = norm.split(/\s+/);
+    for (const word of words) {
+      if (word.length < 2) continue;
+      for (const pattern of keywordPatterns) {
+        const normPattern = normalize(pattern);
+        if (isSimilar(word, normPattern)) return word;
+      }
+    }
+    
+    return null;
+  }
+
+  input.addEventListener('input', () => {
+    const blocked = containsBlocked(input.value);
+    if (blocked) {
+      log.textContent = '❌ کلمه ممنوع تشخیص داده شد!';
+      input.value = '';
+      showWarning();
+    }
+  });
+
+  function doSearch() {
+    const blocked = containsBlocked(input.value);
+    if (blocked) {
+      log.textContent = '❌ جست‌وجوی ممنوع مسدود شد.';
+      input.value = '';
+      showWarning();
+    } else if (input.value.trim()) {
+      log.textContent = '✅ جست‌وجوی امن: ' + input.value;
+    }
+  }
+
+  function showWarning() { warning.classList.add('active'); }
+  function hideWarning() { warning.classList.remove('active'); }
+
+  function chooseHeaven() {
+    hideWarning();
+    heaven.classList.add('active');
+    
+    playHeavenSound();
+    startPetalRain();
+    
+    setTimeout(() => {
+      heavenMessage.classList.add('show');
+    }, 2000);
+    
+    setTimeout(() => {
+      heaven.classList.remove('active');
+      heavenMessage.classList.remove('show');
+      log.textContent = '🌟 به بندگی خدا خوش آمدی';
+    }, 6000);
+  }
+
+  function playHeavenSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, i) => {
+        setTimeout(() => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.5);
+        }, i * 200);
+      });
+    } catch(e) {}
+  }
+
+  function chooseHell() {
+    hideWarning();
+    hell.classList.add('active');
+    
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 200;
+      osc.type = 'sawtooth';
+      gain.gain.value = 0.4;
+      osc.start();
+      setTimeout(() => osc.stop(), 1500);
+    } catch(e) {}
+    
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+    
+    setTimeout(() => {
+      hell.classList.remove('active');
+      showWarning();
+    }, 2000);
+  }
+
+  function startPetalRain() {
+    for (let i = 0; i < 60; i++) {
+      setTimeout(() => {
+        const p = document.createElement('div');
+        p.className = 'petal';
+        p.textContent = ['🌸', '🌺', '🌼', '💐'][Math.floor(Math.random() * 4)];
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.animationDuration = (3 + Math.random() * 2) + 's';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 5000);
+      }, i * 80);
+    }
+  }
+</script>
+</body>
+</html>
